@@ -36,13 +36,13 @@ const CONFIG = {
   forceManual:    false,   // set true to switch the whole page to manual delivery right now
 
   // Manual delivery (used when stock is off)
-  whatsappNumber: "212600000000",                 // international format, digits only
-  supportEmail:   "support@yourdomain.com",
+  whatsappNumber: "212682685845",                 // international format, digits only
+  supportEmail:   "support@aipropass.online",
   formEndpoint:   "",      // optional: Formspree / your webhook URL. If empty, orders go to WhatsApp.
   manualDeliveryTime: "within 24 hours",
 
-  companyName:    "Your Company Name",
-  companyAddress: "Your business address"
+  companyName:    "AI Pro Pass",
+  websiteUrl:     "https://aipropass.online/"
 };
 </script>
 
@@ -344,7 +344,7 @@ body.manual .stockbar{display:block}
     <div><em>🔒</em><b>Encrypted Checkout</b><p>Your payment details are protected with SSL encryption.</p></div>
     <div><em>💸</em><b>30-Day Guarantee</b><p>Full, unconditional refund if you're not happy.</p></div>
     <div><em>🔑</em><b>Zero Passwords</b><p>Activated via a direct redemption link. Your account stays 100% yours.</p></div>
-    <div><em>💬</em><b>Human Support &lt; 24h</b><p>Reach us anytime at <a data-email href="#">support@yourdomain.com</a></p></div>
+    <div><em>💬</em><b>Human Support &lt; 24h</b><p>Reach us anytime at <a data-email href="mailto:support@aipropass.online">support@aipropass.online</a></p></div>
   </div>
 </div></section>
 
@@ -353,10 +353,10 @@ body.manual .stockbar{display:block}
   <div class="fgrid">
     <div><div class="logo" style="margin-bottom:12px"><i>✦</i><span data-brand>AI Pro Pass</span></div><p>18-month activation pass for the Google AI Pro plan, for developers, creators and teams worldwide.</p></div>
     <div><h5>Policies</h5><ul><li><a href="terms.html">Terms of Service</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="refund.html">30-Day Refund Policy</a></li><li><a href="disclaimer.html">Legal Disclaimer</a></li></ul></div>
-    <div><h5>Contact</h5><ul><li><a data-email href="#">support@yourdomain.com</a></li><li><a class="js-wa" href="#" target="_blank" rel="noopener">WhatsApp Support</a></li><li>Support: Mon–Fri, 9am–6pm</li></ul></div>
+    <div><h5>Contact</h5><ul><li><a data-email href="mailto:support@aipropass.online">support@aipropass.online</a></li><li><a class="js-wa" href="https://wa.me/212682685845" target="_blank" rel="noopener">WhatsApp: +212 682-685845</a></li><li>Support: Mon–Fri, 9am–6pm</li></ul></div>
   </div>
   <div class="legal">
-    <p><b data-company>Your Company Name</b> — <span data-address>Your business address</span></p>
+    <p><b data-company>AI Pro Pass</b> — <a href="https://aipropass.online/">aipropass.online</a></p>
     <p><b>Trademark notice:</b> Google, Gemini, Google One, Google AI Pro, Gmail, Google Drive, Docs and Sheets are trademarks of Google LLC. <span data-brand>AI Pro Pass</span> is an independent reseller and is not affiliated with, sponsored or endorsed by Google LLC or Alphabet Inc.</p>
     <p><b>Meta notice:</b> This site is not part of Facebook or Meta Platforms, Inc., and is not endorsed by Meta in any way. Facebook and Instagram are trademarks of Meta Platforms, Inc.</p>
     <p><b>Results notice:</b> Any mention of time saved or productivity gains is illustrative. Individual results vary. We make no income guarantees.</p>
@@ -397,7 +397,6 @@ body.manual .stockbar{display:block}
   fill('[data-brand]', C.brandName); fill('[data-price]', C.price);
   fill('[data-regular]', C.regularPrice); fill('[data-savings]', C.savings);
   fill('[data-delivery]', C.manualDeliveryTime); fill('[data-company]', C.companyName);
-  fill('[data-address]', C.companyAddress);
   document.querySelectorAll('[data-email]').forEach(a => { a.textContent = C.supportEmail; a.href = 'mailto:' + C.supportEmail; });
   document.querySelectorAll('.js-wa').forEach(a => a.href = 'https://wa.me/' + C.whatsappNumber);
 
@@ -407,7 +406,8 @@ body.manual .stockbar{display:block}
   if(C.demoVideoUrl){ v.src = C.demoVideoUrl; if(C.demoPoster) v.poster = C.demoPoster; v.addEventListener('error', hideDemo); }
   else hideDemo();
 
-  let manual = !!C.forceManual;
+  // manual mode if forced, or if no real checkout link is set yet
+  let manual = !!C.forceManual || !C.checkoutUrl || C.checkoutUrl.indexOf('YOUR-CHECKOUT') !== -1;
 
   function setManual(on){
     manual = on;
