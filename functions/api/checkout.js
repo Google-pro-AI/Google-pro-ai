@@ -25,7 +25,6 @@ export async function onRequestPost({ request, env }) {
     const session = await stripe(env, 'POST', '/v1/checkout/sessions', {
       mode: 'payment',
       line_items: { 0: lineItem },
-      payment_method_types: { 0: 'card' },          // cards incl. Apple Pay / Google Pay → instant confirmation
       success_url: `${base}/delivery.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/?checkout=cancelled`,
       expires_at: expiresAt,
