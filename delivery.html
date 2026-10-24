@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Order confirmed — AI Pro Pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07070f;--bg2:#0d0d1c;--card:#11111f;--line:rgba(255,255,255,.08);--text:#eef0ff;--muted:#a3a7c7;--dim:#6e7299;--green:#22c55e;--amber:#fbbf24;--grad:linear-gradient(135deg,#8b5cf6 0%,#3b82f6 50%,#22d3ee 100%)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+body:before{content:"";position:fixed;inset:-260px -200px auto;height:620px;background:radial-gradient(closest-side,rgba(139,92,246,.22),transparent 70%);pointer-events:none}
+a{color:#a5b4fc}
+.wrap{max-width:680px;margin:0 auto;padding:0 20px}
+nav{border-bottom:1px solid var(--line);position:relative}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--text);text-decoration:none}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;font-style:normal;font-size:14px}
+.secure{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:6px}
+main{position:relative;padding:44px 0 70px}
+.hidden{display:none!important}
+
+/* header */
+.head{text-align:center;margin-bottom:26px}
+.check{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)}
+.check svg{width:30px;height:30px;stroke:var(--green);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#86efac;margin-bottom:8px}
+h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-height:1.2;margin-bottom:8px}
+.lead{color:var(--muted);font-size:15.5px;max-width:520px;margin:0 auto}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;margin-bottom:16px}
+.card h2{font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.access{border-color:rgba(139,92,246,.35);background:linear-gradient(180deg,rgba(139,92,246,.08),rgba(17,17,31,1) 60%)}
+.linkrow{display:flex;gap:10px;flex-wrap:wrap}
+.linkrow input{flex:1 1 240px;min-width:0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 15px;color:var(--text);font:500 14px ui-monospace,Menlo,Consolas,monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;font:inherit;font-weight:700;text-decoration:none;border-radius:12px;padding:14px 20px;font-size:15px;transition:transform .15s,opacity .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 34px -12px rgba(139,92,246,.75);width:100%;margin-top:12px;padding:16px;font-size:16px}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line)}
+.private{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:13px;color:var(--muted)}
+.private svg{flex:none;width:16px;height:16px;margin-top:2px;stroke:var(--muted);fill:none;stroke-width:2}
+
+.steps{list-style:none;counter-reset:s;display:grid;gap:14px}
+.steps li{counter-increment:s;display:flex;gap:14px;font-size:15px;color:#d6d8ee}
+.steps li:before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:rgba(139,92,246,.16);color:#c4b5fd;border:1px solid rgba(139,92,246,.35)}
+
+.summary{width:100%;border-collapse:collapse;font-size:14.5px}
+.summary td{padding:9px 0;border-bottom:1px solid var(--line)}
+.summary tr:last-child td{border-bottom:0}
+.summary td:first-child{color:var(--muted)}
+.summary td:last-child{text-align:right;font-weight:600}
+
+.help{display:flex;gap:10px;flex-wrap:wrap}
+.help a{flex:1 1 200px;text-decoration:none;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px}
+.help a b{display:block;font-size:12px;color:var(--dim);font-weight:600;margin-bottom:2px}
+.foot{text-align:center;font-size:12.5px;color:var(--dim);margin-top:22px}
+
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:#8b5cf6;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state{text-align:center;padding:40px 26px}
+.state .ic{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3)}
+.state .ic.warn{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.4);font-size:26px}
+.state h1{font-size:24px}
+.state p{color:var(--muted);max-width:480px;margin:0 auto}
+@media print{nav,.btn,.help,.private{display:none!important}body{background:#fff;color:#000}body:before{display:none}.card{border-color:#ddd;background:#fff}.summary td,.lead,.steps li{color:#000}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="/"><i>✦</i>AI Pro Pass</a>
+  <span class="secure">🔒 Secure order page</span>
+</div></nav>
+
+<main><div class="wrap">
+
+  <!-- loading -->
+  <div class="card state" id="vLoading">
+    <div class="ic"><div class="spinner"></div></div>
+    <h1>Confirming your payment…</h1>
+    <p>This usually takes a few seconds. Please keep this page open.</p>
+  </div>
+
+  <!-- delivered -->
+  <div class="hidden" id="vDone">
+    <div class="head">
+      <div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <span class="badge">Payment confirmed</span>
+      <h1>Thank you for your order</h1>
+      <p class="lead">Your activation pass is ready. A copy has also been sent to <b id="mail">your email</b>.</p>
+    </div>
+
+    <div class="card access">
+      <h2>Your activation link</h2>
+      <div class="linkrow">
+        <input id="link" readonly aria-label="Activation link">
+        <button class="btn btn-ghost" id="copy" type="button">Copy</button>
+      </div>
+      <a class="btn btn-primary" id="open" href="#" target="_blank" rel="noopener noreferrer">Activate my pass →</a>
+      <p class="private"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>This link was issued to you only and has not been given to anyone else. Please keep it private until you use it.</p>
+    </div>
+
+    <div class="card">
+      <h2>How to activate</h2>
+      <ol class="steps">
+        <li>Sign in to the personal account you want to activate.</li>
+        <li>Open your activation link and follow the on-screen steps.</li>
+        <li>The link can be used once, on one account.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Order summary</h2>
+      <table class="summary">
+        <tr><td>Order reference</td><td id="ref">—</td></tr>
+        <tr><td>Date</td><td id="date">—</td></tr>
+        <tr><td>Total paid</td><td id="total">—</td></tr>
+        <tr><td>Confirmation sent to</td><td id="mail3">—</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Need help?</h2>
+      <div class="help">
+        <a href="mailto:support@aipropass.online"><b>Email</b>support@aipropass.online</a>
+        <a href="https://wa.me/447378106036" target="_blank" rel="noopener"><b>WhatsApp</b>+44 7378 106036</a>
+      </div>
+    </div>
+    <p class="foot">Covered by our <a href="/refund.html">30-day money-back guarantee</a> · Please keep this page or the confirmation email for your records.</p>
+  </div>
+
+  <!-- paid but needs manual help -->
+  <div class="card state hidden" id="vAttention">
+    <div class="ic warn">⏳</div>
+    <h1>Payment received. We are preparing your pass.</h1>
+    <p>Your payment is confirmed. Our team has been notified and will send your activation link to <b id="mail2">your email</b> shortly. If we cannot, you will be refunded in full.</p>
+    <p style="margin-top:16px"><a href="https://wa.me/447378106036" target="_blank" rel="noopener">WhatsApp +44 7378 106036</a> · <a href="mailto:support@aipropass.online">support@aipropass.online</a></p>
+  </div>
+
+  <!-- error / not paid -->
+  <div class="card state hidden" id="vError">
+    <div class="ic warn">!</div>
+    <h1 id="errTitle">We could not confirm this order yet</h1>
+    <p id="errText">If you were charged, your activation link will be emailed to you automatically. You can also contact us with the email you used for payment.</p>
+    <p style="margin-top:18px"><a class="btn btn-ghost" href="javascript:location.reload()">Try again</a></p>
+    <p style="margin-top:14px"><a href="https://wa.me/447378106036" target="_blank" rel="noopener">WhatsApp +44 7378 106036</a> · <a href="mailto:support@aipropass.online">support@aipropass.online</a></p>
+  </div>
+
+</div></main>
+
+<script>
+(function(){
+  const sid = new URLSearchParams(location.search).get('session_id');
+  const $ = id => document.getElementById(id);
+  const show = id => ['vLoading','vDone','vAttention','vError'].forEach(v => $(v).classList.toggle('hidden', v !== id));
+  if(!sid){ $('errTitle').textContent = 'No order found'; $('errText').textContent = 'This page opens automatically after your payment.'; return show('vError'); }
+
+  let tries = 0;
+  async function poll(){
+    tries++;
+    try{
+      const r = await fetch('/api/order?session_id=' + encodeURIComponent(sid), {cache:'no-store'});
+      const d = await r.json();
+      if(d.status === 'delivered'){
+        $('link').value = d.url; $('open').href = d.url;
+        if(d.email){ $('mail').textContent = d.email; $('mail3').textContent = d.email; }
+        if(d.ref) $('ref').textContent = d.ref;
+        if(d.total) $('total').textContent = d.total;
+        $('date').textContent = new Date((d.date || Date.now()/1000) * 1000).toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+        return show('vDone');
+      }
+      if(d.status === 'needs_attention'){ if(d.email) $('mail2').textContent = d.email; return show('vAttention'); }
+      if(d.status === 'unpaid' && tries > 6){ $('errTitle').textContent = 'Payment not completed'; $('errText').textContent = 'Your payment was not confirmed, so you have not been charged. You can return to the website and try again.'; return show('vError'); }
+    }catch(e){}
+    if(tries < 20) setTimeout(poll, tries < 5 ? 1500 : 3000); else show('vError');
+  }
+  poll();
+
+  $('copy').addEventListener('click', async () => {
+    try{ await navigator.clipboard.writeText($('link').value); }catch(e){ $('link').select(); document.execCommand('copy'); }
+    $('copy').textContent = 'Copied ✓'; setTimeout(() => $('copy').textContent = 'Copy', 2000);
+  });
+})();
+</script>
+</body>
+</html>

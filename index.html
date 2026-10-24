@@ -21,22 +21,20 @@ const CONFIG = {
   regularPrice:   "$359.82",
   savings:        "$339.83",
 
-  checkoutUrl:    "https://YOUR-CHECKOUT-LINK",   // your own checkout page
+  // Automatic store (Stripe + Cloudflare). Leave these as they are.
+  checkoutApi:    "/api/checkout",                // creates the Stripe payment page
 
   // Activation demo video (How it works section). Upload your .mp4 next to index.html
   // and put its name here, e.g. "activation-demo.mp4". Leave "" to hide the video.
   demoVideoUrl:   "activation-demo.mp4",
   demoPoster:     "",      // optional cover image, e.g. "demo-cover.jpg"
 
-  // Stock check — your API provider endpoint.
-  // It should return JSON. The page treats it as IN STOCK when any of these is true:
-  //   { "in_stock": true }  or  { "stock": 5 } (number > 0)  or  { "available": true }
-  // Leave empty "" to skip the check and always use the checkout.
-  stockApiUrl:    "",
+  // Live stock from your store. When it reaches 0 the page switches to "sold out / order on WhatsApp" mode.
+  stockApiUrl:    "/api/stock",
   forceManual:    false,   // set true to switch the whole page to manual delivery right now
 
   // Manual delivery (used when stock is off)
-  whatsappNumber: "212682685845",                 // international format, digits only
+  whatsappNumber: "447378106036",                 // international format, digits only
   supportEmail:   "support@aipropass.online",
   formEndpoint:   "",      // optional: Formspree / your webhook URL. If empty, orders go to WhatsApp.
   manualDeliveryTime: "within 24 hours",
@@ -353,7 +351,7 @@ body.manual .stockbar{display:block}
   <div class="fgrid">
     <div><div class="logo" style="margin-bottom:12px"><i>✦</i><span data-brand>AI Pro Pass</span></div><p>18-month activation pass for the Google AI Pro plan, for developers, creators and teams worldwide.</p></div>
     <div><h5>Policies</h5><ul><li><a href="terms.html">Terms of Service</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="refund.html">30-Day Refund Policy</a></li><li><a href="disclaimer.html">Legal Disclaimer</a></li></ul></div>
-    <div><h5>Contact</h5><ul><li><a data-email href="mailto:support@aipropass.online">support@aipropass.online</a></li><li><a class="js-wa" href="https://wa.me/212682685845" target="_blank" rel="noopener">WhatsApp: +212 682-685845</a></li><li>Support: Mon–Fri, 9am–6pm</li></ul></div>
+    <div><h5>Contact</h5><ul><li><a data-email href="mailto:support@aipropass.online">support@aipropass.online</a></li><li><a class="js-wa" href="https://wa.me/447378106036" target="_blank" rel="noopener">WhatsApp: +44 7378 106036</a></li><li>Support: Mon–Fri, 9am–6pm</li></ul></div>
   </div>
   <div class="legal">
     <p><b data-company>AI Pro Pass</b> — <a href="https://aipropass.online/">aipropass.online</a></p>
@@ -377,7 +375,7 @@ body.manual .stockbar{display:block}
       <form id="orderForm">
         <label>Full name</label><input name="name" required autocomplete="name">
         <label>Email (where we send your link)</label><input name="email" type="email" required autocomplete="email">
-        <label>WhatsApp number</label><input name="whatsapp" type="tel" required placeholder="+212 6..." autocomplete="tel">
+        <label>WhatsApp number</label><input name="whatsapp" type="tel" required placeholder="e.g. +44 7400 123456" autocomplete="tel">
         <label>Country</label><input name="country" autocomplete="country-name">
         <label>Note (optional)</label><textarea name="note" rows="2"></textarea>
         <button class="btn btn-primary" type="submit" id="sendBtn">Send My Order →</button>
@@ -406,8 +404,7 @@ body.manual .stockbar{display:block}
   if(C.demoVideoUrl){ v.src = C.demoVideoUrl; if(C.demoPoster) v.poster = C.demoPoster; v.addEventListener('error', hideDemo); }
   else hideDemo();
 
-  // manual mode if forced, or if no real checkout link is set yet
-  let manual = !!C.forceManual || !C.checkoutUrl || C.checkoutUrl.indexOf('YOUR-CHECKOUT') !== -1;
+  let manual = !!C.forceManual;
 
   function setManual(on){
     manual = on;
@@ -433,9 +430,24 @@ body.manual .stockbar{display:block}
   }
   setManual(manual); checkStock();
 
+  let busy = false;
+  async function startCheckout(btn){
+    if(busy) return; busy = true;
+    const label = btn.dataset.label || btn.innerHTML; btn.dataset.label = label; btn.innerHTML = 'Opening secure checkout…'; btn.style.opacity = '.75';
+    try{
+      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body:'{}'});
+      const d = await r.json().catch(() => ({}));
+      if(r.ok && d.url){ window.location.href = d.url; return; }
+      if(r.status === 409){ setManual(true); openModal(); }
+      else alert(d.error || 'Something went wrong. Please try again or contact us on WhatsApp.');
+    }catch(e){ alert('Connection problem. Please try again.'); }
+    btn.innerHTML = label; btn.style.opacity = ''; busy = false;
+  }
   document.querySelectorAll('.js-buy').forEach(b => b.addEventListener('click', () => {
-    if(manual) openModal(); else window.location.href = C.checkoutUrl;
+    if(manual) openModal(); else startCheckout(b);
   }));
+  // restore buttons when the visitor comes back from Stripe with the Back button
+  window.addEventListener('pageshow', e => { if(e.persisted){ busy = false; document.querySelectorAll('.js-buy').forEach(b => { b.style.opacity = ''; if(b.dataset.label) b.innerHTML = b.dataset.label; }); } });
 
   window.openModal = () => document.getElementById('modal').classList.add('open');
   window.closeModal = () => document.getElementById('modal').classList.remove('open');

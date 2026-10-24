@@ -1,25 +1,24 @@
 /* ============================================================
    LEGAL PAGES CONFIG — edit these values once, all 4 pages update
-   (keep them identical to the CONFIG block in index.html)
+   After editing, change ?v=3 to ?v=4 at the bottom of the 4 policy pages.
    ============================================================ */
 const LEGAL = {
   brandName:      "AI Pro Pass",
   siteUrl:        "https://aipropass.online/",
-  companyName:    "AI Pro Pass",                // registered legal name
+  companyName:    "AI Pro Pass",
   companyAddress: "",                           // leave "" to hide it
-  registration:   "",                           // RC / ICE number — leave "" to hide it
+  registration:   "",                           // leave "" to hide it
   supportEmail:   "support@aipropass.online",
-  whatsappNumber: "212682685845",               // digits only
-  whatsappLabel:  "+212 682-685845",            // how the number is shown
+  whatsappNumber: "447378106036",               // digits only
+  whatsappLabel:  "+44 7378 106036",            // how the number is shown
   price:          "$19.99",
   governingLaw:   "the Kingdom of Morocco",
   courts:         "the competent courts of Casablanca, Morocco",
-  paymentProcessor: "our payment provider",    // e.g. "Stripe", "Paddle", "PayPal"
-  effectiveDate:  "October 18, 2026"
+  paymentProcessor: "Stripe",
+  effectiveDate:  "October 24, 2026"
 };
 
 (function(){
-  // fill values; if a value is empty, hide it (and its whole line when marked with data-l-wrap)
   Object.keys(LEGAL).forEach(k => {
     document.querySelectorAll('[data-l="' + k + '"]').forEach(e => {
       const v = LEGAL[k];
