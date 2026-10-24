@@ -1,6 +1,3 @@
-
-   // v2 – deploy fix
-
 // POST /api/checkout  → holds one link and returns a Stripe Checkout URL
 import { json, now, randomToken, siteUrl, settings, reserveLink, releaseReservation, activeHoldsForIp, stripe } from '../../lib/store.js';
 
@@ -29,12 +26,14 @@ export async function onRequestPost({ request, env }) {
       mode: 'payment',
       line_items: { 0: lineItem },
       success_url: `${base}/delivery.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/?checkout=cancelled`,
+      cancel_url: `${base}/?checkout=cancelled&r=${reservation}`,
       expires_at: expiresAt,
       client_reference_id: reservation,
       metadata: { reservation },
       payment_intent_data: { metadata: { reservation } },
     });
+    // remember which Stripe page holds this link (used when the customer clicks Back)
+    await env.DB.prepare(`UPDATE links SET session_id = ?1 WHERE reservation = ?2 AND status = 'reserved'`).bind(session.id, reservation).run();
     return json({ url: session.url });
   } catch (e) {
     await releaseReservation(env, reservation);

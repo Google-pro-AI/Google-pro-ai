@@ -428,7 +428,16 @@ body.manual .stockbar{display:block}
       if(!ok) setManual(true);
     }catch(e){ setManual(true); }   // API down = treat as out of stock
   }
-  setManual(manual); checkStock();
+  setManual(manual);
+  // customer came back from Stripe with the Back arrow → put their link back in stock right away
+  (async () => {
+    const q = new URLSearchParams(location.search);
+    if (q.get('checkout') === 'cancelled' && q.get('r')) {
+      try{ await fetch('/api/cancel', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({r: q.get('r')})}); }catch(e){}
+      history.replaceState(null, '', location.pathname);
+    }
+    checkStock();
+  })();
 
   let busy = false;
   async function startCheckout(btn){
