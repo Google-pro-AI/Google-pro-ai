@@ -8,6 +8,10 @@
 <meta property="og:title" content="AI Pro Pass — 18 Months for $19.99 (94% OFF)">
 <meta property="og:description" content="One payment. 18 months of Google AI Pro activated on your own Google account. No password needed, no renewal.">
 <meta property="og:type" content="website">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#07070f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -202,6 +206,35 @@ footer a:hover{color:var(--text)}
 .mbox .ok{text-align:center;padding:20px 0}
 .mbox .ok em{font-style:normal;font-size:48px;display:block;margin-bottom:10px}
 
+/* quantity picker */
+.qbox{max-width:480px}
+.qopts{display:grid;gap:10px;margin:18px 0 6px}
+.qopt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--text);font:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+.qopt:hover{border-color:rgba(139,92,246,.5)}
+.qopt.on{border-color:#8b5cf6;background:rgba(139,92,246,.12)}
+.qopt .radio{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--dim);display:grid;place-items:center}
+.qopt.on .radio{border-color:#8b5cf6}
+.qopt.on .radio:after{content:"";width:10px;height:10px;border-radius:50%;background:#8b5cf6}
+.qopt .q{flex:1;min-width:0}
+.qopt .q b{display:block;font-size:15.5px}
+.qopt .q small{color:var(--muted);font-size:13px}
+.qopt .tag{font-size:11.5px;font-weight:800;letter-spacing:.3px;padding:3px 9px;border-radius:99px;background:rgba(34,197,94,.14);color:#86efac;white-space:nowrap}
+.qopt .tot{font-weight:800;font-size:16px;white-space:nowrap}
+.qsum{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 0;color:var(--muted);font-size:14px}
+.qsum b{color:var(--text);font-size:22px}
+.qnote{font-size:12.5px;color:var(--dim);margin-top:10px;text-align:center}
+.vol{margin-top:10px;font-size:14px;color:#c4b5fd;font-weight:600}
+.qopt .q b,.qopt .q small{white-space:nowrap}
+@media (max-width:480px){
+  .qbox{padding:24px 16px}
+  .qopts{gap:8px;margin-top:14px}
+  .qopt{padding:11px 12px;gap:10px}
+  .qopt .q b{font-size:14.5px}
+  .qopt .q small{font-size:12px}
+  .qopt .tag{font-size:10.5px;padding:2px 7px}
+  .qopt .tot{font-size:15px}
+}
+
 /* stock banner */
 .stockbar{display:none;background:#1c1530;border-bottom:1px solid rgba(251,191,36,.35);color:#fde68a;text-align:center;font-size:14px;padding:10px 16px}
 body.manual .stockbar{display:block}
@@ -306,6 +339,7 @@ body.manual .stockbar{display:block}
       <div class="reg">Regular price: <s data-regular>$359.82</s> ($19.99/month)</div>
       <div class="big grad-text" data-price>$19.99</div>
       <div class="per">One-time payment • just ~$1.11 per month</div>
+      <div class="vol hidden" id="volNote"></div>
     </div>
     <button class="btn btn-primary js-buy">Claim 18 Months for <span data-price>$19.99</span> →</button>
     <div class="trust">
@@ -364,6 +398,19 @@ body.manual .stockbar{display:block}
 
 <div class="mcta"><button class="btn btn-primary js-buy">Claim 18 Months — <span data-price>$19.99</span></button></div>
 
+<!-- QUANTITY PICKER -->
+<div class="modal" id="qtyModal" role="dialog" aria-modal="true" aria-labelledby="qtyTitle">
+  <div class="mbox qbox">
+    <button class="x" aria-label="Close" onclick="closeQty()">×</button>
+    <h3 id="qtyTitle">How many passes do you need?</h3>
+    <p class="note">One pass activates one Google account. Buy more and save on every pass.</p>
+    <div class="qopts" id="qopts"></div>
+    <div class="qsum"><span id="qsumLabel">Total</span><b id="qtotal">—</b></div>
+    <button class="btn btn-primary" id="qgo" type="button" style="width:100%;margin-top:16px">Continue to secure checkout →</button>
+    <p class="qnote">🔒 Secure payment by Stripe · each pass gets its own unique link</p>
+  </div>
+</div>
+
 <!-- MANUAL ORDER MODAL -->
 <div class="modal" id="modal" role="dialog" aria-modal="true">
   <div class="mbox">
@@ -417,6 +464,44 @@ body.manual .stockbar{display:block}
     }
   }
 
+  // ---- quantity & volume pricing (prices come from the store, so they always match checkout) ----
+  let store = null, qty = 1;
+  const money = (cents) => { try{ return new Intl.NumberFormat('en-US', {style:'currency', currency:(store && store.currency || 'usd').toUpperCase()}).format(cents/100); }catch(e){ return '$' + (cents/100).toFixed(2); } };
+  const tiers = () => (store && store.tiers && store.tiers.length) ? store.tiers : [{min:1, unit:1999}];
+  const unitFor = (q) => { let u = tiers()[0].unit; tiers().forEach(t => { if(q >= t.min) u = t.unit; }); return u; };
+  function showVolumeNote(){
+    const t = tiers(); if(t.length < 2) return;
+    const el = document.getElementById('volNote');
+    el.textContent = '💎 Buy more, save more: ' + t.slice(1).map(x => x.min + '+ passes ' + money(x.unit) + ' each').join(' · ');
+    el.classList.remove('hidden');
+  }
+  function renderQty(){
+    const max = Math.max(1, (store && store.max_qty) || 1);
+    const base = tiers()[0].unit, box = document.getElementById('qopts');
+    if(qty > max) qty = max;
+    box.innerHTML = '';
+    for(let q = 1; q <= max; q++){
+      const u = unitFor(q), save = Math.round((1 - u/base) * 100);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'qopt' + (q === qty ? ' on' : '');
+      b.innerHTML = '<span class="radio"></span><span class="q"><b>' + q + (q === 1 ? ' pass' : ' passes') + '</b><small>' + money(u) + ' each</small></span>' +
+        (save > 0 ? '<span class="tag">SAVE ' + save + '%</span>' : '') + '<span class="tot">' + money(u*q) + '</span>';
+      b.onclick = () => { qty = q; renderQty(); };
+      box.appendChild(b);
+    }
+    const u = unitFor(qty), saved = (base - u) * qty;
+    document.getElementById('qtotal').textContent = money(u * qty);
+    document.getElementById('qsumLabel').textContent = saved > 0 ? 'Total · you save ' + money(saved) : 'Total';
+  }
+  window.closeQty = () => document.getElementById('qtyModal').classList.remove('open');
+  async function openQty(btn){
+    if(!store || !store.tiers){ try{ store = await fetch(C.stockApiUrl, {cache:'no-store'}).then(r => r.json()); }catch(e){} }
+    if(!store || !store.max_qty || store.max_qty <= 1){ return startCheckout(btn, 1); }   // only 1 left → go straight to checkout
+    qty = 1; renderQty();
+    document.getElementById('qtyModal').classList.add('open');
+  }
+  document.getElementById('qgo').addEventListener('click', e => startCheckout(e.currentTarget, qty));
+  document.getElementById('qtyModal').addEventListener('click', e => { if(e.target.id === 'qtyModal') closeQty(); });
+
   async function checkStock(){
     if(manual || !C.stockApiUrl) return;
     try{
@@ -424,8 +509,9 @@ body.manual .stockbar{display:block}
       const r = await fetch(C.stockApiUrl, {signal: ctrl.signal, cache:'no-store'});
       if(!r.ok) throw 0;
       const d = await r.json();
+      store = d;
       const ok = d.in_stock === true || d.available === true || (typeof d.stock === 'number' && d.stock > 0);
-      if(!ok) setManual(true);
+      if(!ok) setManual(true); else showVolumeNote();
     }catch(e){ setManual(true); }   // API down = treat as out of stock
   }
   setManual(manual);
@@ -440,20 +526,24 @@ body.manual .stockbar{display:block}
   })();
 
   let busy = false;
-  async function startCheckout(btn){
+  async function startCheckout(btn, n){
     if(busy) return; busy = true;
     const label = btn.dataset.label || btn.innerHTML; btn.dataset.label = label; btn.innerHTML = 'Opening secure checkout…'; btn.style.opacity = '.75';
     try{
-      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body:'{}'});
+      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({qty: n || 1})});
       const d = await r.json().catch(() => ({}));
       if(r.ok && d.url){ window.location.href = d.url; return; }
-      if(r.status === 409){ setManual(true); openModal(); }
+      if(r.status === 409 && d.error === 'not_enough' && d.available > 0){
+        alert('Only ' + d.available + ' pass' + (d.available > 1 ? 'es are' : ' is') + ' left right now. Please choose ' + d.available + ' or fewer.');
+        store = Object.assign(store || {}, {max_qty: d.available, stock: d.available}); renderQty();
+      }
+      else if(r.status === 409){ closeQty(); setManual(true); openModal(); }
       else alert(d.error || 'Something went wrong. Please try again or contact us on WhatsApp.');
     }catch(e){ alert('Connection problem. Please try again.'); }
     btn.innerHTML = label; btn.style.opacity = ''; busy = false;
   }
   document.querySelectorAll('.js-buy').forEach(b => b.addEventListener('click', () => {
-    if(manual) openModal(); else startCheckout(b);
+    if(manual) openModal(); else openQty(b);
   }));
   // restore buttons when the visitor comes back from Stripe with the Back button
   window.addEventListener('pageshow', e => { if(e.persisted){ busy = false; document.querySelectorAll('.js-buy').forEach(b => { b.style.opacity = ''; if(b.dataset.label) b.innerHTML = b.dataset.label; }); } });

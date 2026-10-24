@@ -1,10 +1,12 @@
-// POST /api/checkout  → holds one link and returns a Stripe Checkout URL
-import { json, now, randomToken, siteUrl, settings, reserveLink, releaseReservation, activeHoldsForIp, stripe } from '../../lib/store.js';
+// POST /api/checkout {qty}  → holds `qty` links and returns a Stripe Checkout URL
+import { json, now, randomToken, siteUrl, settings, unitPrice, reserveLinks, releaseReservation, activeHoldsForIp, stockCount, stripe } from '../../lib/store.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB || !env.STRIPE_SECRET_KEY) return json({ error: 'Store is not configured yet.' }, 503);
   const s = settings(env);
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const body = await request.json().catch(() => ({}));
+  const qty = Math.min(s.maxQty, Math.max(1, parseInt(body.qty, 10) || 1));
 
   // stop one visitor from holding the whole stock with unpaid checkouts
   if (await activeHoldsForIp(env, ip) >= s.maxHoldsPerIp) {
@@ -12,14 +14,19 @@ export async function onRequestPost({ request, env }) {
   }
 
   const reservation = randomToken(16);
-  const expiresAt = now() + s.holdMinutes * 60 + 60;         // Stripe needs ≥ 30 min
-  const held = await reserveLink(env, reservation, expiresAt + 300, ip); // hold 5 min longer than the session
-  if (!held) return json({ error: 'sold_out' }, 409);
+  const expiresAt = now() + s.holdMinutes * 60 + 60;          // Stripe needs ≥ 30 min
+  const held = await reserveLinks(env, reservation, expiresAt + 300, ip, qty); // all or nothing
+  if (!held) {
+    const available = await stockCount(env);
+    return json({ error: available ? 'not_enough' : 'sold_out', available }, 409);
+  }
 
   const base = siteUrl(env, request);
-  const lineItem = s.priceId
-    ? { price: s.priceId, quantity: 1 }
-    : { price_data: { currency: s.currency, unit_amount: s.amount, product_data: { name: s.productName } }, quantity: 1 };
+  const unit = unitPrice(s, qty);
+  const save = Math.round((1 - unit / s.tiers[0].unit) * 100);
+  const product = { name: s.productName };
+  if (save > 0) product.description = `Volume price: ${qty} passes — ${save}% off each`;
+  const lineItem = { price_data: { currency: s.currency, unit_amount: unit, product_data: product }, quantity: qty };
 
   try {
     const session = await stripe(env, 'POST', '/v1/checkout/sessions', {
@@ -29,10 +36,10 @@ export async function onRequestPost({ request, env }) {
       cancel_url: `${base}/?checkout=cancelled&r=${reservation}`,
       expires_at: expiresAt,
       client_reference_id: reservation,
-      metadata: { reservation },
-      payment_intent_data: { metadata: { reservation } },
+      metadata: { reservation, qty: String(qty) },
+      payment_intent_data: { metadata: { reservation, qty: String(qty) } },
     });
-    // remember which Stripe page holds this link (used when the customer clicks Back)
+    // remember which Stripe page holds these links (used when the customer clicks Back)
     await env.DB.prepare(`UPDATE links SET session_id = ?1 WHERE reservation = ?2 AND status = 'reserved'`).bind(session.id, reservation).run();
     return json({ url: session.url });
   } catch (e) {

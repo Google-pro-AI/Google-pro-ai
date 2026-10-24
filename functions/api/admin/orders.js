@@ -7,8 +7,10 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'GET') {
     const rows = await env.DB.prepare(
-      `SELECT o.session_id, o.email, o.name, o.amount, o.currency, o.status, o.emailed, o.created_at, l.url
-       FROM orders o LEFT JOIN links l ON l.id = o.link_id ORDER BY o.created_at DESC LIMIT 200`
+      `SELECT o.session_id, o.email, o.name, o.amount, o.currency, o.status, o.emailed, o.created_at,
+         (SELECT GROUP_CONCAT(url, ' ') FROM links WHERE session_id = o.session_id AND status = 'sold') AS urls,
+         (SELECT COUNT(*) FROM links WHERE session_id = o.session_id AND status = 'sold') AS qty
+       FROM orders o ORDER BY o.created_at DESC LIMIT 200`
     ).all();
     return json({ orders: rows.results });
   }
@@ -18,7 +20,7 @@ export async function onRequest({ request, env }) {
     if (b.action === 'resend' && b.session_id) {
       await env.DB.prepare(`UPDATE orders SET emailed = 0 WHERE session_id = ?1`).bind(b.session_id).run();
       const o = await getOrder(env, b.session_id);
-      if (!o || o.status !== 'delivered') return json({ error: 'order not delivered' }, 400);
+      if (!o || !o.urls || !o.urls.length) return json({ error: 'order has no links yet' }, 400);
       const sent = await sendDeliveryEmail(env, o);
       return json({ sent });
     }

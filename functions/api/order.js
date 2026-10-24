@@ -16,9 +16,11 @@ export async function onRequestGet({ request, env, waitUntil }) {
     }
   }
 
-  if (order.status === 'delivered') {
+  const urls = order.urls || (order.url ? [order.url] : []);
+  if (urls.length) {
     return json({
-      status: 'delivered', url: order.url, email: maskEmail(order.email),
+      status: order.status === 'delivered' ? 'delivered' : 'partial',   // partial = some links still to come
+      url: urls[0], urls, email: maskEmail(order.email),
       ref: orderRef(sid), total: formatMoney(order.amount, order.currency), date: order.created_at || null,
     });
   }

@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Store Admin — AI Pro Pass</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#07070f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -92,13 +96,13 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
       <div class="card">
         <h2>Orders needing attention</h2>
         <div class="scroll" id="attention"><p class="hint">None 🎉</p></div>
-        <p class="hint">These customers paid when stock ran out. Add links, then send them a link by hand, or refund them in Stripe.</p>
+        <p class="hint">These customers paid when stock ran out (or got fewer links than they paid for). Add links, then send the missing ones by hand, or refund them in Stripe.</p>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:18px">
       <h2>Recent orders <button class="btn btn-sm" id="csv">Export CSV</button></h2>
-      <div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th>Email</th><th>Amount</th><th>Status</th><th>Link</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
+      <div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th>Email</th><th>Qty</th><th>Amount</th><th>Status</th><th>Links</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
     </div>
 
     <div class="card">
@@ -137,7 +141,7 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
     $('sAv').textContent = s.available || 0; $('sCk').textContent = s.in_checkout || 0; $('sSold').textContent = s.sold || 0;
     ordersCache = O.orders || []; $('sOrd').textContent = ordersCache.length;
     $('links').innerHTML = (L.links||[]).map(l => `<tr><td>${l.id}</td><td>${esc(l.url)}</td><td><span class="pill p-${esc(l.status)}">${esc(l.status)}</span></td><td>${fmtDate(l.sold_at)}</td><td>${l.status==='available'?`<button class="btn btn-sm" data-del="${l.id}">Disable</button>`:''}</td></tr>`).join('') || '<tr><td colspan="5" class="hint">No links yet. Add some above.</td></tr>';
-    $('orders').innerHTML = ordersCache.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td>${money(o.amount,o.currency)}</td><td><span class="pill p-${esc(o.status)}">${esc(o.status)}</span>${o.emailed?' ✉️':''}</td><td>${esc(o.url||'')}</td><td>${o.status==='delivered'?`<button class="btn btn-sm" data-resend="${esc(o.session_id)}">Resend email</button>`:''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">No orders yet.</td></tr>';
+    $('orders').innerHTML = ordersCache.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td>${o.qty||0}</td><td>${money(o.amount,o.currency)}</td><td><span class="pill p-${esc(o.status)}">${esc(o.status)}</span>${o.emailed?' ✉️':''}</td><td>${(o.urls||'').split(' ').filter(Boolean).map(esc).join('<br>')}</td><td>${o.urls?`<button class="btn btn-sm" data-resend="${esc(o.session_id)}">Resend email</button>`:''}</td></tr>`).join('') || '<tr><td colspan="7" class="hint">No orders yet.</td></tr>';
     const att = ordersCache.filter(o => o.status === 'needs_attention');
     $('attention').innerHTML = att.length ? '<table class="tbl"><tbody>' + att.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td style="font-size:11px">${esc(o.session_id)}</td></tr>`).join('') + '</tbody></table>' : '<p class="hint">None 🎉</p>';
   }
@@ -179,7 +183,7 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
   });
 
   $('csv').onclick = () => {
-    const rows = [['date','email','name','amount','currency','status','link','session_id']].concat(ordersCache.map(o => [fmtDate(o.created_at), o.email, o.name, o.amount!=null?(o.amount/100).toFixed(2):'', o.currency, o.status, o.url, o.session_id]));
+    const rows = [['date','email','name','qty','amount','currency','status','links','session_id']].concat(ordersCache.map(o => [fmtDate(o.created_at), o.email, o.name, o.qty, o.amount!=null?(o.amount/100).toFixed(2):'', o.currency, o.status, o.urls, o.session_id]));
     const csv = rows.map(r => r.map(v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"').join(',')).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'aipropass-orders.csv'; a.click();
   };

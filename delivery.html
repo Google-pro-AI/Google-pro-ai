@@ -6,6 +6,10 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Order confirmed — AI Pro Pass</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#07070f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -41,6 +45,11 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 34px -12px rgba(139,92,246,.75);width:100%;margin-top:12px;padding:16px;font-size:16px}
 .btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line)}
+.pass{padding:16px 0;border-top:1px solid var(--line)}
+.pass:first-child{padding-top:0;border-top:0}
+.pass .lbl{font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:8px}
+.pass .btn-primary{margin-top:10px;padding:13px;font-size:15px}
+.partial{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);color:#fde68a;border-radius:14px;padding:12px 16px;font-size:14px;margin-bottom:16px}
 .private{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:13px;color:var(--muted)}
 .private svg{flex:none;width:16px;height:16px;margin-top:2px;stroke:var(--muted);fill:none;stroke-width:2}
 
@@ -90,17 +99,14 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
       <div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
       <span class="badge">Payment confirmed</span>
       <h1>Thank you for your order</h1>
-      <p class="lead">Your activation pass is ready. A copy has also been sent to <b id="mail">your email</b>.</p>
+      <p class="lead"><span id="leadTxt">Your activation pass is ready.</span> A copy has also been sent to <b id="mail">your email</b>.</p>
     </div>
 
+    <div class="partial hidden" id="partial">Part of your order is being prepared by our team. The remaining pass(es) will be emailed to you shortly.</div>
     <div class="card access">
-      <h2>Your activation link</h2>
-      <div class="linkrow">
-        <input id="link" readonly aria-label="Activation link">
-        <button class="btn btn-ghost" id="copy" type="button">Copy</button>
-      </div>
-      <a class="btn btn-primary" id="open" href="#" target="_blank" rel="noopener noreferrer">Activate my pass →</a>
-      <p class="private"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>This link was issued to you only and has not been given to anyone else. Please keep it private until you use it.</p>
+      <h2 id="linksTitle">Your activation link</h2>
+      <div id="links"></div>
+      <p class="private"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="privTxt">This link was issued to you only and has not been given to anyone else. Please keep it private until you use it.</span></p>
     </div>
 
     <div class="card">
@@ -108,7 +114,7 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
       <ol class="steps">
         <li>Sign in to the personal account you want to activate.</li>
         <li>Open your activation link and follow the on-screen steps.</li>
-        <li>The link can be used once, on one account.</li>
+        <li><span id="onceTxt">The link can be used once, on one account.</span></li>
       </ol>
     </div>
 
@@ -116,6 +122,7 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
       <h2>Order summary</h2>
       <table class="summary">
         <tr><td>Order reference</td><td id="ref">—</td></tr>
+        <tr id="qtyRow" class="hidden"><td>Passes</td><td id="qty">—</td></tr>
         <tr><td>Date</td><td id="date">—</td></tr>
         <tr><td>Total paid</td><td id="total">—</td></tr>
         <tr><td>Confirmation sent to</td><td id="mail3">—</td></tr>
@@ -164,8 +171,9 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
     try{
       const r = await fetch('/api/order?session_id=' + encodeURIComponent(sid), {cache:'no-store'});
       const d = await r.json();
-      if(d.status === 'delivered'){
-        $('link').value = d.url; $('open').href = d.url;
+      if(d.status === 'delivered' || d.status === 'partial'){
+        renderLinks(d.urls || [d.url]);
+        $('partial').classList.toggle('hidden', d.status !== 'partial');
         if(d.email){ $('mail').textContent = d.email; $('mail3').textContent = d.email; }
         if(d.ref) $('ref').textContent = d.ref;
         if(d.total) $('total').textContent = d.total;
@@ -179,10 +187,30 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
   }
   poll();
 
-  $('copy').addEventListener('click', async () => {
-    try{ await navigator.clipboard.writeText($('link').value); }catch(e){ $('link').select(); document.execCommand('copy'); }
-    $('copy').textContent = 'Copied ✓'; setTimeout(() => $('copy').textContent = 'Copy', 2000);
-  });
+  function renderLinks(urls){
+    const many = urls.length > 1;
+    $('links').innerHTML = '';
+    urls.forEach((u, i) => {
+      const box = document.createElement('div'); box.className = 'pass';
+      box.innerHTML = (many ? '<div class="lbl">Pass ' + (i+1) + ' of ' + urls.length + '</div>' : '') +
+        '<div class="linkrow"><input readonly aria-label="Activation link"><button class="btn btn-ghost" type="button">Copy</button></div>' +
+        '<a class="btn btn-primary" target="_blank" rel="noopener noreferrer"></a>';
+      const inp = box.querySelector('input'), cp = box.querySelector('button'), a = box.querySelector('a');
+      inp.value = u; a.href = u; a.textContent = many ? 'Activate pass ' + (i+1) + ' →' : 'Activate my pass →';
+      cp.addEventListener('click', async () => {
+        try{ await navigator.clipboard.writeText(u); }catch(e){ inp.select(); document.execCommand('copy'); }
+        cp.textContent = 'Copied ✓'; setTimeout(() => cp.textContent = 'Copy', 2000);
+      });
+      $('links').appendChild(box);
+    });
+    if(many){
+      $('linksTitle').textContent = 'Your ' + urls.length + ' activation links';
+      $('leadTxt').textContent = 'Your ' + urls.length + ' activation passes are ready — one link per account.';
+      $('privTxt').textContent = 'These links were issued to you only and have not been given to anyone else. Please keep them private until you use them.';
+      $('onceTxt').textContent = 'Each link can be used once, on one account.';
+      $('qtyRow').classList.remove('hidden'); $('qty').textContent = urls.length;
+    }
+  }
 })();
 </script>
 </body>
