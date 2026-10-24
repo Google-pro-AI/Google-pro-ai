@@ -1,3 +1,6 @@
+
+   // v2 – deploy fix
+
 // POST /api/checkout  → holds one link and returns a Stripe Checkout URL
 import { json, now, randomToken, siteUrl, settings, reserveLink, releaseReservation, activeHoldsForIp, stripe } from '../../lib/store.js';
 
