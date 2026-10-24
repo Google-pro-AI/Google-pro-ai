@@ -36,6 +36,7 @@ export async function onRequestPost({ request, env }) {
     return json({ url: session.url });
   } catch (e) {
     await releaseReservation(env, reservation);
-    return json({ error: 'Payment page could not be created. Please try again.' }, 502);
+    console.log('Stripe checkout error:', e.message);
+    return json({ error: 'Payment page could not be created. ' + e.message }, 502);
   }
 }
