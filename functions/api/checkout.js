@@ -1,5 +1,5 @@
 // POST /api/checkout {qty}  → holds `qty` links and returns a Stripe Checkout URL
-import { json, now, randomToken, siteUrl, settings, unitPrice, reserveLinks, releaseReservation, activeHoldsForIp, stockCount, stripe } from '../../lib/store.js';
+import { json, now, randomToken, siteUrl, settings, unitPrice, reserveLinks, releaseReservation, activeHoldsForIp, stockCount, stripe, normCode } from '../../lib/store.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB || !env.STRIPE_SECRET_KEY) return json({ error: 'Store is not configured yet.' }, 503);
@@ -7,6 +7,7 @@ export async function onRequestPost({ request, env }) {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   const body = await request.json().catch(() => ({}));
   const qty = Math.min(s.maxQty, Math.max(1, parseInt(body.qty, 10) || 1));
+  const ref = normCode(body.ref);   // partner code from the visitor's partner link (checked again at delivery)
 
   // stop one visitor from holding the whole stock with unpaid checkouts
   if (await activeHoldsForIp(env, ip) >= s.maxHoldsPerIp) {
@@ -36,7 +37,7 @@ export async function onRequestPost({ request, env }) {
       cancel_url: `${base}/?checkout=cancelled&r=${reservation}`,
       expires_at: expiresAt,
       client_reference_id: reservation,
-      metadata: { reservation, qty: String(qty) },
+      metadata: { reservation, qty: String(qty), ...(ref ? { ref } : {}) },
       payment_intent_data: { metadata: { reservation, qty: String(qty) } },
     });
     // remember which Stripe page holds these links (used when the customer clicks Back)

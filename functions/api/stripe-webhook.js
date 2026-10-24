@@ -1,5 +1,5 @@
 // POST /api/stripe-webhook  ← Stripe calls this after a payment
-import { json, verifyStripeSignature, fulfill, releaseReservation } from '../../lib/store.js';
+import { json, verifyStripeSignature, fulfill, releaseReservation, markRefunded } from '../../lib/store.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const payload = await request.text();
@@ -17,6 +17,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
     case 'checkout.session.expired':
     case 'checkout.session.async_payment_failed':
       await releaseReservation(env, session.metadata && session.metadata.reservation);
+      break;
+    case 'charge.refunded':
+      await markRefunded(env, session);   // here the object is a Stripe charge
       break;
   }
   return json({ received: true });

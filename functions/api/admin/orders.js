@@ -1,13 +1,14 @@
 // GET  /api/admin/orders           → latest 200 orders
 // POST /api/admin/orders {session_id, action:"resend"}  → re-send the delivery email
-import { json, isAdmin, sendDeliveryEmail, getOrder } from '../../../lib/store.js';
+import { json, isAdmin, sendDeliveryEmail, getOrder, ensureSchema } from '../../../lib/store.js';
 
 export async function onRequest({ request, env }) {
   if (!isAdmin(request, env)) return json({ error: 'unauthorized' }, 401);
 
   if (request.method === 'GET') {
+    await ensureSchema(env).catch(() => {});
     const rows = await env.DB.prepare(
-      `SELECT o.session_id, o.email, o.name, o.amount, o.currency, o.status, o.emailed, o.created_at,
+      `SELECT o.*,
          (SELECT GROUP_CONCAT(url, ' ') FROM links WHERE session_id = o.session_id AND status = 'sold') AS urls,
          (SELECT COUNT(*) FROM links WHERE session_id = o.session_id AND status = 'sold') AS qty
        FROM orders o ORDER BY o.created_at DESC LIMIT 200`

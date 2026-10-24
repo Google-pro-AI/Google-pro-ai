@@ -56,6 +56,16 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
 .p-delivered{background:rgba(34,197,94,.14);color:#86efac}
 .p-needs_attention{background:rgba(248,113,113,.16);color:#fca5a5}
 .p-processing{background:rgba(251,191,36,.14);color:#fde68a}
+.p-refunded{background:rgba(255,255,255,.08);color:var(--dim)}
+.p-active{background:rgba(34,197,94,.14);color:#86efac}
+.p-paused{background:rgba(255,255,255,.08);color:var(--dim)}
+summary::-webkit-details-marker{display:none}
+.pform{display:grid;grid-template-columns:1.3fr 1fr .6fr 1.3fr auto;gap:10px;align-items:end;margin-bottom:16px}
+.pform label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:5px}
+.num{text-align:right;white-space:nowrap}
+.tbl td.money{white-space:nowrap;font-weight:700}
+.copyline{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+@media (max-width:820px){.pform{grid-template-columns:1fr 1fr}}
 .hint{color:var(--dim);font-size:12.5px;margin-top:8px}
 .hidden{display:none}
 @media (max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
@@ -100,9 +110,30 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:18px" id="appsCard">
+      <h2>Waiting for email confirmation <span class="hint" style="margin:0;font-weight:500">they become active automatically when they click the link in their email</span></h2>
+      <div class="scroll"><table class="tbl"><thead><tr><th>Signed up</th><th>Contact</th><th>Payout</th><th></th></tr></thead><tbody id="apps"></tbody></table></div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px" id="partnersCard">
+      <h2>Partners <span class="hint" style="margin:0;font-weight:500">sales 1–14 paid on the 30th · sales 15–31 paid on the 15th</span></h2>
+      <div class="scroll"><table class="tbl"><thead><tr><th>Partner</th><th class="num">Clicks</th><th class="num">Orders</th><th class="num">Passes</th><th class="num">Sales</th><th class="num">Upcoming</th><th class="num">Ready to pay</th><th class="num">Paid</th><th></th></tr></thead><tbody id="partners"></tbody></table></div>
+      <p class="hint">Ready to pay = send this amount to the partner (their payout details are under their name), then click "Mark as paid". Refunds are deducted automatically.</p>
+      <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">+ Add a partner yourself</summary>
+        <div class="pform" style="margin-top:12px">
+          <div><label>Partner name</label><input id="pName" placeholder="e.g. Sara AI Tips"></div>
+          <div><label>Code (in their link)</label><input id="pCode" placeholder="e.g. sara"></div>
+          <div><label>Commission %</label><input id="pPct" type="number" min="0" max="90" value="30"></div>
+          <div><label>Email</label><input id="pContact" placeholder="their email"></div>
+          <button class="btn btn-primary" id="pAdd">Add partner</button>
+        </div>
+        <div class="msg" id="pMsg"></div>
+      </details>
+    </div>
+
     <div class="card" style="margin-bottom:18px">
       <h2>Recent orders <button class="btn btn-sm" id="csv">Export CSV</button></h2>
-      <div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th>Email</th><th>Qty</th><th>Amount</th><th>Status</th><th>Links</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
+      <div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th>Email</th><th>Qty</th><th>Amount</th><th>Status</th><th>Partner</th><th>Links</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
     </div>
 
     <div class="card">
@@ -141,10 +172,41 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
     $('sAv').textContent = s.available || 0; $('sCk').textContent = s.in_checkout || 0; $('sSold').textContent = s.sold || 0;
     ordersCache = O.orders || []; $('sOrd').textContent = ordersCache.length;
     $('links').innerHTML = (L.links||[]).map(l => `<tr><td>${l.id}</td><td>${esc(l.url)}</td><td><span class="pill p-${esc(l.status)}">${esc(l.status)}</span></td><td>${fmtDate(l.sold_at)}</td><td>${l.status==='available'?`<button class="btn btn-sm" data-del="${l.id}">Disable</button>`:''}</td></tr>`).join('') || '<tr><td colspan="5" class="hint">No links yet. Add some above.</td></tr>';
-    $('orders').innerHTML = ordersCache.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td>${o.qty||0}</td><td>${money(o.amount,o.currency)}</td><td><span class="pill p-${esc(o.status)}">${esc(o.status)}</span>${o.emailed?' ✉️':''}</td><td>${(o.urls||'').split(' ').filter(Boolean).map(esc).join('<br>')}</td><td>${o.urls?`<button class="btn btn-sm" data-resend="${esc(o.session_id)}">Resend email</button>`:''}</td></tr>`).join('') || '<tr><td colspan="7" class="hint">No orders yet.</td></tr>';
+    $('orders').innerHTML = ordersCache.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td>${o.qty||0}</td><td>${money(o.amount,o.currency)}</td><td><span class="pill p-${esc(o.status)}">${esc(o.status)}</span>${o.emailed?' ✉️':''}</td><td>${o.partner?esc(o.partner)+(o.commission?' · '+money(o.commission,o.currency):''):''}</td><td>${(o.urls||'').split(' ').filter(Boolean).map(esc).join('<br>')}</td><td>${o.urls?`<button class="btn btn-sm" data-resend="${esc(o.session_id)}">Resend email</button>`:''}</td></tr>`).join('') || '<tr><td colspan="8" class="hint">No orders yet.</td></tr>';
+    loadPartners();
     const att = ordersCache.filter(o => o.status === 'needs_attention');
     $('attention').innerHTML = att.length ? '<table class="tbl"><tbody>' + att.map(o => `<tr><td>${fmtDate(o.created_at)}</td><td>${esc(o.email)}</td><td style="font-size:11px">${esc(o.session_id)}</td></tr>`).join('') + '</tbody></table>' : '<p class="hint">None 🎉</p>';
   }
+
+  const site = location.origin;
+  const PM = {paypal:'PayPal', wise:'Wise', payoneer:'Payoneer', usdt_bep20:'USDT (BEP20)', bank:'Bank', other:'Other'};
+  const im = p => p.whatsapp ? ' · ' + (p.messenger === 'telegram' ? 'Telegram ' : 'WhatsApp ') + esc(p.whatsapp) : '';
+  async function loadPartners(){
+    const P = await api('/api/admin/partners').catch(() => ({}));
+    const all = P.partners || [];
+    const apps = all.filter(p => p.approved === 0), list = all.filter(p => p.approved === 1);
+    $('appsCard').classList.toggle('hidden', !apps.length);
+    $('apps').innerHTML = apps.map(p => `<tr><td><b>${esc(p.name)}</b><div class="hint" style="margin:2px 0 0">?ref=${esc(p.code)} · ${fmtDate(p.created_at)}</div></td>
+      <td>${esc(p.email||'')}<div class="hint" style="margin:2px 0 0">${im(p).slice(3)}</div></td><td>${esc(PM[p.payout_method]||'')}<div class="hint" style="margin:2px 0 0">${esc(p.payout_details||'')}</div></td>
+      <td><div class="copyline"><button class="btn btn-sm btn-primary" data-approve="${esc(p.code)}" title="Use only if their email never arrived">Activate manually</button><button class="btn btn-sm" data-reject="${esc(p.code)}">Delete</button></div></td></tr>`).join('');
+    $('partners').innerHTML = list.map(p => `<tr><td><b>${esc(p.name)}</b> <span class="pill p-${p.active?'active':'paused'}">${p.active?'active':'paused'}</span> <span class="hint" style="margin:0">${esc(p.pct)}%</span>
+        <div class="hint" style="margin:2px 0 0">${esc(p.email||p.contact||'')}${im(p)}</div>
+        <div class="hint" style="margin:2px 0 0;color:#c4b5fd">💳 ${p.payout_method?esc(PM[p.payout_method]||p.payout_method)+': '+esc(p.payout_details||''):'no payout details yet'}</div>
+        <div class="copyline"><button class="btn btn-sm" data-copy="${esc(p.links.link)}">Copy partner link</button><button class="btn btn-sm" data-copy="${esc(p.links.dashboard)}">Copy their dashboard</button></div></td>
+        <td class="num">${p.clicks}</td><td class="num">${p.orders}</td><td class="num">${p.passes}</td><td class="num">${money(p.revenue,'usd')}</td>
+        <td class="num">${money(p.pending,'usd')}${p.next_payout?`<div class="hint" style="margin:0">on ${esc(p.next_payout)}</div>`:''}</td>
+        <td class="num money" style="color:${p.payable?'#86efac':'inherit'}">${money(p.payable,'usd')}${p.carried<0?`<div class="hint" style="margin:0;color:#fca5a5">${money(p.carried,'usd')} carried</div>`:''}</td><td class="num">${money(p.paid,'usd')}</td>
+        <td><div class="copyline">${p.payable>0?`<button class="btn btn-sm btn-primary" data-payout="${esc(p.code)}" data-amt="${money(p.payable,'usd')}">Mark as paid</button>`:''}<button class="btn btn-sm" data-pct="${esc(p.code)}" data-cur="${p.pct}">Edit %</button><button class="btn btn-sm" data-toggle="${esc(p.code)}" data-active="${p.active?0:1}">${p.active?'Pause':'Resume'}</button></div></td></tr>`).join('')
+      || '<tr><td colspan="9" class="hint">No partners yet. Share aipropass.online/partner-join so people can apply.</td></tr>';
+  }
+
+  $('pAdd').onclick = async () => {
+    const m = $('pMsg'); m.className = 'msg'; m.textContent = 'Adding…';
+    const r = await api('/api/admin/partners', {method:'POST', body: JSON.stringify({name: $('pName').value, code: $('pCode').value, pct: $('pPct').value, email: $('pContact').value})}).catch(() => ({error:'Error, try again.'}));
+    if(r.error){ m.className = 'msg err'; m.textContent = r.error; return; }
+    m.className = 'msg ok'; m.textContent = 'Partner added. Their link: ' + site + '/?ref=' + r.code;
+    ['pName','pCode','pContact'].forEach(id => $(id).value = ''); loadPartners();
+  };
 
   async function login(){
     token = $('token').value.trim(); $('loginMsg').textContent = '';
@@ -178,12 +240,20 @@ h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;
 
   document.addEventListener('click', async e => {
     const d = e.target.closest('[data-del]'), r = e.target.closest('[data-resend]');
+    const cp = e.target.closest('[data-copy]'), po = e.target.closest('[data-payout]'), tg = e.target.closest('[data-toggle]');
+    if(cp){ try{ await navigator.clipboard.writeText(cp.dataset.copy); cp.textContent = 'Copied ✓'; }catch(err){ prompt('Copy this:', cp.dataset.copy); } }
+    if(po && confirm('Did you send ' + po.dataset.amt + ' to this partner? This marks it as paid.')){ const x = await api('/api/admin/partners', {method:'POST', body: JSON.stringify({action:'payout', code: po.dataset.payout})}); alert('Marked ' + money(x.total,'usd') + ' as paid.'); loadPartners(); }
+    const ap = e.target.closest('[data-approve]'), rj = e.target.closest('[data-reject]'), pc = e.target.closest('[data-pct]');
+    if(ap){ ap.textContent = 'Approving…'; await api('/api/admin/partners', {method:'POST', body: JSON.stringify({action:'approve', code: ap.dataset.approve})}); loadPartners(); }
+    if(rj && confirm('Block this sign-up?')){ await api('/api/admin/partners', {method:'POST', body: JSON.stringify({action:'reject', code: rj.dataset.reject})}); loadPartners(); }
+    if(pc){ const v = prompt('New commission % for this partner (applies to new sales):', pc.dataset.cur); if(v !== null && v !== ''){ await api('/api/admin/partners', {method:'POST', body: JSON.stringify({action:'update', code: pc.dataset.pct, pct: v})}); loadPartners(); } }
+    if(tg){ await api('/api/admin/partners', {method:'POST', body: JSON.stringify({action:'update', code: tg.dataset.toggle, active: tg.dataset.active === '1'})}); loadPartners(); }
     if(d && confirm('Disable this link? It will not be sold.')){ await api('/api/admin/links?id='+d.dataset.del, {method:'DELETE'}); load(); }
     if(r){ r.textContent='Sending…'; const x = await api('/api/admin/orders', {method:'POST', body: JSON.stringify({action:'resend', session_id: r.dataset.resend})}); r.textContent = x.sent ? 'Sent ✓' : 'Failed'; }
   });
 
   $('csv').onclick = () => {
-    const rows = [['date','email','name','qty','amount','currency','status','links','session_id']].concat(ordersCache.map(o => [fmtDate(o.created_at), o.email, o.name, o.qty, o.amount!=null?(o.amount/100).toFixed(2):'', o.currency, o.status, o.urls, o.session_id]));
+    const rows = [['date','email','name','qty','amount','currency','status','partner','commission','links','session_id']].concat(ordersCache.map(o => [fmtDate(o.created_at), o.email, o.name, o.qty, o.amount!=null?(o.amount/100).toFixed(2):'', o.currency, o.status, o.partner||'', o.commission?(o.commission/100).toFixed(2):'', o.urls, o.session_id]));
     const csv = rows.map(r => r.map(v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"').join(',')).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'aipropass-orders.csv'; a.click();
   };

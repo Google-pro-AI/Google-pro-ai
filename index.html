@@ -384,7 +384,7 @@ body.manual .stockbar{display:block}
 <footer><div class="wrap">
   <div class="fgrid">
     <div><div class="logo" style="margin-bottom:12px"><i>✦</i><span data-brand>AI Pro Pass</span></div><p>18-month activation pass for the Google AI Pro plan, for developers, creators and teams worldwide.</p></div>
-    <div><h5>Policies</h5><ul><li><a href="terms.html">Terms of Service</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="refund.html">30-Day Refund Policy</a></li><li><a href="disclaimer.html">Legal Disclaimer</a></li></ul></div>
+    <div><h5>Policies</h5><ul><li><a href="terms.html">Terms of Service</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="refund.html">30-Day Refund Policy</a></li><li><a href="disclaimer.html">Legal Disclaimer</a></li><li><a href="partner-join.html">💸 Become a partner — earn 30%</a></li></ul></div>
     <div><h5>Contact</h5><ul><li><a data-email href="mailto:support@aipropass.online">support@aipropass.online</a></li><li><a class="js-wa" href="https://wa.me/447378106036" target="_blank" rel="noopener">WhatsApp: +44 7378 106036</a></li><li>Support: Mon–Fri, 9am–6pm</li></ul></div>
   </div>
   <div class="legal">
@@ -464,6 +464,22 @@ body.manual .stockbar{display:block}
     }
   }
 
+  // ---- partner links: aipropass.online/?ref=CODE is remembered for 30 days (last partner link wins) ----
+  const REF_DAYS = 30;
+  function getRef(){
+    try{ const r = JSON.parse(localStorage.getItem('aip_ref') || 'null'); if(r && Date.now() - r.t < REF_DAYS*864e5) return r.c; }catch(e){}
+    const m = document.cookie.match(/(?:^|; )aip_ref=([a-z0-9_-]{2,30})/); return m ? m[1] : '';
+  }
+  (function captureRef(){
+    const q = new URLSearchParams(location.search), c = (q.get('ref') || '').trim().toLowerCase();
+    if(!/^[a-z0-9_-]{2,30}$/.test(c)) return;
+    try{ localStorage.setItem('aip_ref', JSON.stringify({c, t: Date.now()})); }catch(e){}
+    document.cookie = 'aip_ref=' + c + '; max-age=' + (REF_DAYS*86400) + '; path=/; SameSite=Lax';
+    let seen = false; try{ seen = sessionStorage.getItem('aip_ref_seen') === c; sessionStorage.setItem('aip_ref_seen', c); }catch(e){}
+    if(!seen) fetch('/api/ref', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({code: c})}).catch(()=>{});
+    q.delete('ref'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  })();
+
   // ---- quantity & volume pricing (prices come from the store, so they always match checkout) ----
   let store = null, qty = 1;
   const money = (cents) => { try{ return new Intl.NumberFormat('en-US', {style:'currency', currency:(store && store.currency || 'usd').toUpperCase()}).format(cents/100); }catch(e){ return '$' + (cents/100).toFixed(2); } };
@@ -530,7 +546,7 @@ body.manual .stockbar{display:block}
     if(busy) return; busy = true;
     const label = btn.dataset.label || btn.innerHTML; btn.dataset.label = label; btn.innerHTML = 'Opening secure checkout…'; btn.style.opacity = '.75';
     try{
-      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({qty: n || 1})});
+      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({qty: n || 1, ref: getRef()})});
       const d = await r.json().catch(() => ({}));
       if(r.ok && d.url){ window.location.href = d.url; return; }
       if(r.status === 409 && d.error === 'not_enough' && d.available > 0){
