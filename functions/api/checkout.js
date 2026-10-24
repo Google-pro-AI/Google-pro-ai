@@ -22,6 +22,11 @@ export async function onRequestPost({ request, env }) {
     return json({ error: available ? 'not_enough' : 'sold_out', available }, 409);
   }
 
+  // Meta ads measurement — only if the visitor accepted cookies (sent to Meta after payment)
+  const clip = (v, n) => String(v || '').slice(0, n);
+  const adMeta = body.consent === true ? {
+    mc: '1', fbp: clip(body.fbp, 200), fbc: clip(body.fbc, 400), ip: clip(ip, 60), ua: clip(request.headers.get('user-agent'), 450),
+  } : {};
   const base = siteUrl(env, request);
   const unit = unitPrice(s, qty);
   const save = Math.round((1 - unit / s.tiers[0].unit) * 100);
@@ -37,7 +42,7 @@ export async function onRequestPost({ request, env }) {
       cancel_url: `${base}/?checkout=cancelled&r=${reservation}`,
       expires_at: expiresAt,
       client_reference_id: reservation,
-      metadata: { reservation, qty: String(qty), ...(ref ? { ref } : {}) },
+      metadata: { reservation, qty: String(qty), ...(ref ? { ref } : {}), ...adMeta },
       payment_intent_data: { metadata: { reservation, qty: String(qty) } },
     });
     // remember which Stripe page holds these links (used when the customer clicks Back)

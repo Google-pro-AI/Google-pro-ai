@@ -546,7 +546,8 @@ body.manual .stockbar{display:block}
     if(busy) return; busy = true;
     const label = btn.dataset.label || btn.innerHTML; btn.dataset.label = label; btn.innerHTML = 'Opening secure checkout…'; btn.style.opacity = '.75';
     try{
-      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({qty: n || 1, ref: getRef()})});
+      const r = await fetch(C.checkoutApi, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({qty: n || 1, ref: getRef()}, window.AIP ? AIP.info() : {}))});
+      if(r.ok && window.AIP) AIP.track('InitiateCheckout', {num_items: n || 1, currency: 'USD', value: unitFor(n || 1) * (n || 1) / 100});
       const d = await r.json().catch(() => ({}));
       if(r.ok && d.url){ window.location.href = d.url; return; }
       if(r.status === 409 && d.error === 'not_enough' && d.available > 0){
@@ -586,5 +587,6 @@ body.manual .stockbar{display:block}
   });
 })();
 </script>
+<script src="/tracking.js?v=1" defer></script>
 </body>
 </html>

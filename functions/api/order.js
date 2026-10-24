@@ -21,7 +21,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     return json({
       status: order.status === 'delivered' ? 'delivered' : 'partial',   // partial = some links still to come
       url: urls[0], urls, email: maskEmail(order.email),
-      ref: orderRef(sid), total: formatMoney(order.amount, order.currency), date: order.created_at || null,
+      ref: orderRef(sid), total: formatMoney(order.amount, order.currency), amount: order.amount || 0, currency: order.currency || 'usd', date: order.created_at || null,
     });
   }
   return json({ status: order.status, email: maskEmail(order.email) });

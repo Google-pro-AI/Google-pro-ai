@@ -178,6 +178,9 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
         if(d.ref) $('ref').textContent = d.ref;
         if(d.total) $('total').textContent = d.total;
         $('date').textContent = new Date((d.date || Date.now()/1000) * 1000).toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+        try{ if(window.AIP && d.amount && localStorage.getItem('aip_px_' + sid) !== '1'){
+          AIP.track('Purchase', {value: d.amount / 100, currency: String(d.currency || 'usd').toUpperCase(), num_items: (d.urls || [1]).length, content_type: 'product'}, sid);
+          localStorage.setItem('aip_px_' + sid, '1'); } }catch(e){}
         return show('vDone');
       }
       if(d.status === 'needs_attention'){ if(d.email) $('mail2').textContent = d.email; return show('vAttention'); }
@@ -213,5 +216,6 @@ h1{font-size:clamp(26px,4.6vw,34px);font-weight:800;letter-spacing:-.6px;line-he
   }
 })();
 </script>
+<script src="/tracking.js?v=1" defer></script>
 </body>
 </html>
