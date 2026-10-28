@@ -11,7 +11,7 @@ const LEGAL = {
   supportEmail:   "support@aipropass.online",
   whatsappNumber: "447378106036",               // digits only
   whatsappLabel:  "+44 7378 106036",            // how the number is shown
-  price:          "$19.99",
+  price:          "$9.99",
   governingLaw:   "the Kingdom of Morocco",
   courts:         "the competent courts of Casablanca, Morocco",
   paymentProcessor: "Stripe",
